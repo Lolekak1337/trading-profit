@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d12">
+<title>TradeLog — Trading Journal</title>
+<style>
+:root{
+  --bg:#080b10;--panel:#10151d;--panel2:#151b24;--border:#222a36;
+  --text:#f4f7fb;--muted:#8792a3;--green:#25d695;--green2:#0f8f64;
+  --red:#ff5d6c;--yellow:#ffc857;--blue:#5b8cff;--shadow:0 14px 45px rgba(0,0,0,.28);
+  --radius:18px;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 20% -10%,#172033 0,transparent 32%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.app{display:flex;min-height:100vh}.sidebar{width:248px;position:fixed;left:0;top:0;bottom:0;padding:24px 16px;border-right:1px solid var(--border);background:rgba(8,11,16,.92);backdrop-filter:blur(18px);z-index:20}
+.logo{font-weight:900;font-size:22px;letter-spacing:-.7px;padding:4px 10px 24px}.logo span{color:var(--green)}
+.nav{display:flex;flex-direction:column;gap:7px}.nav button{border:0;background:transparent;color:var(--muted);padding:12px 13px;border-radius:12px;text-align:left;display:flex;gap:11px;align-items:center;transition:.2s}.nav button:hover,.nav button.active{background:var(--panel2);color:var(--text)}.nav button.active{box-shadow:inset 3px 0 var(--green)}
+.side-bottom{position:absolute;bottom:20px;left:16px;right:16px}.mini-risk{padding:13px;background:var(--panel);border:1px solid var(--border);border-radius:14px;font-size:12px;color:var(--muted)}
+.main{margin-left:248px;width:calc(100% - 248px);padding:28px;max-width:1700px}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.topbar h1{margin:0;font-size:27px;letter-spacing:-.8px}.topbar p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:11px 15px;border-radius:12px;font-weight:700;transition:.2s}.btn:hover{transform:translateY(-1px);border-color:#394454}.btn.primary{background:var(--green);color:#03120d;border-color:var(--green)}.btn.danger{color:#ff8b96}.btn.small{padding:7px 10px;font-size:12px}
+.view{display:none;animation:fade .22s ease}.view.active{display:block}@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.card{background:linear-gradient(145deg,rgba(21,27,36,.95),rgba(13,18,25,.95));border:1px solid var(--border);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow)}.stat-label{color:var(--muted);font-size:12px}.stat-value{font-size:21px;font-weight:850;margin-top:9px;letter-spacing:-.5px}.positive{color:var(--green)!important}.negative{color:var(--red)!important}.neutral{color:var(--text)!important}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-top:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:19px;box-shadow:var(--shadow)}.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.panel-title{font-weight:800}.muted{color:var(--muted)}
+canvas{width:100%;height:290px;display:block}
+.quick{display:flex;gap:9px;flex-wrap:wrap}.quick .btn{flex:1;min-width:130px}
+.alert{padding:13px 15px;border-radius:12px;background:rgba(255,93,108,.09);border:1px solid rgba(255,93,108,.28);color:#ff9ca5;margin-bottom:14px;font-size:13px}.hidden{display:none!important}
+.section-title{margin:0 0 15px;font-size:18px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select,.field input,.field select,.field textarea{width:100%;background:#0c1118;border:1px solid var(--border);color:var(--text);border-radius:11px;padding:11px 12px;outline:none}.toolbar input:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:#40506a}.toolbar .grow{flex:1;min-width:150px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px}.table{width:100%;border-collapse:collapse;min-width:850px}.table th,.table td{padding:12px 13px;text-align:left;border-bottom:1px solid var(--border);font-size:12px}.table th{color:var(--muted);font-weight:700;background:#0d1219}.table tr:last-child td{border-bottom:0}.actions{display:flex;gap:5px}
+.empty{text-align:center;padding:42px;color:var(--muted)}
+.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.month-nav{display:flex;gap:7px}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.weekday{font-size:11px;color:var(--muted);padding:4px 7px}.day{min-height:92px;border:1px solid var(--border);border-radius:12px;background:#0d1219;padding:8px;transition:.18s}.day:not(.emptyday):hover{border-color:#3c495b;transform:translateY(-1px)}.daynum{font-weight:800;font-size:12px}.day.positive-day{background:linear-gradient(145deg,rgba(37,214,149,.12),#0d1219);border-color:rgba(37,214,149,.25)}.day.negative-day{background:linear-gradient(145deg,rgba(255,93,108,.1),#0d1219);border-color:rgba(255,93,108,.25)}.day.zero-day{opacity:.65}.day-pnl{font-size:13px;font-weight:800;margin-top:19px}.day-count{font-size:10px;color:var(--muted);margin-top:5px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(5px);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}.modal-backdrop.open{display:flex}.modal{width:min(850px,100%);max-height:94vh;overflow:auto;background:#111720;border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:0 25px 90px rgba(0,0,0,.55)}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-head h2{margin:0;font-size:21px}.close{background:transparent;border:0;color:var(--muted);font-size:26px}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.field label{display:block;font-size:11px;color:var(--muted);margin:0 0 6px}.field.full{grid-column:1/-1}.field textarea{min-height:85px;resize:vertical}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.detail{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:15px}.detail-box{background:#0c1118;border:1px solid var(--border);border-radius:12px;padding:11px}.detail-box b{display:block;margin-top:5px}.trade-list{display:flex;flex-direction:column;gap:7px}.trade-row{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;background:#0d1219;border:1px solid var(--border);border-radius:11px}.trade-row small{display:block;color:var(--muted);margin-top:3px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.chart-card{min-height:350px}
+.progress{height:8px;background:#080b10;border-radius:99px;overflow:hidden;margin-top:10px}.progress>i{display:block;height:100%;background:var(--green);border-radius:99px}.goal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.goal-card h3{margin:0;font-size:13px}.goal-num{font-size:25px;font-weight:850;margin-top:10px}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.setting{display:flex;flex-direction:column;gap:9px}.setting label{font-size:12px;color:var(--muted)}.setting input,.setting select{background:#0c1118;border:1px solid var(--border);color:var(--text);border-radius:11px;padding:11px}
+.mobile-nav{display:none}.fab{position:fixed;right:22px;bottom:22px;background:var(--green);color:#03120d;border:0;border-radius:50%;width:58px;height:58px;font-size:28px;font-weight:500;box-shadow:0 12px 35px rgba(37,214,149,.25);z-index:30}
+.toast{position:fixed;right:20px;top:20px;background:#161e28;border:1px solid #344051;color:var(--text);padding:12px 15px;border-radius:12px;z-index:100;box-shadow:var(--shadow);opacity:0;transform:translateY(-8px);pointer-events:none;transition:.25s;font-size:13px}.toast.show{opacity:1;transform:none}
+.file-input{display:none}
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}.chart-grid{grid-template-columns:1fr}}
+@media(max-width:760px){
+ .sidebar{display:none}.main{margin-left:0;width:100%;padding:17px 14px 92px}.topbar{margin-bottom:17px}.topbar h1{font-size:23px}.topbar .desktop-add{display:none}
+ .cards{grid-template-columns:repeat(2,1fr);gap:8px}.card{padding:13px;border-radius:14px}.stat-value{font-size:18px}.panel{padding:14px;border-radius:15px}.form-grid,.settings-grid,.goal-grid{grid-template-columns:1fr}.detail{grid-template-columns:repeat(2,1fr)}
+ .calendar{gap:4px}.day{min-height:74px;padding:6px;border-radius:9px}.day-pnl{font-size:10px;margin-top:13px}.day-count{font-size:8px}.weekday{font-size:9px;padding:3px}
+ .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);bottom:0;left:0;right:0;height:68px;background:rgba(10,14,19,.96);backdrop-filter:blur(18px);border-top:1px solid var(--border);z-index:25;padding-bottom:env(safe-area-inset-bottom)}.mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:9px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center}.mobile-nav button.active{color:var(--green)}.mobile-nav b{font-size:19px}.fab{right:18px;bottom:78px;width:52px;height:52px}.quick{display:grid;grid-template-columns:1fr 1fr}.toolbar{display:grid;grid-template-columns:1fr 1fr}.toolbar .grow{grid-column:1/-1}.modal{padding:17px;border-radius:18px}.modal-backdrop{padding:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">Trade<span>Log</span></div>
+  <nav class="nav">
+    <button data-view="home" class="active">📊 <span>Главная</span></button>
+    <button data-view="calendar">📅 <span>Календарь</span></button>
+    <button data-view="trades">↕️ <span>Сделки</span></button>
+    <button data-view="stats">📈 <span>Статистика</span></button>
+    <button data-view="goals">🎯 <span>Цели</span></button>
+    <button data-view="settings">⚙️ <span>Настройки</span></button>
+  </nav>
+  <div class="side-bottom"><div class="mini-risk" id="sideRisk">Риск: —<br>Дневной лимит: —</div></div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div><h1 id="pageTitle">Главная</h1><p id="pageSubtitle">Ваш торговый журнал</p></div>
+    <button class="btn primary desktop-add" onclick="openTradeModal()">＋ Добавить сделку</button>
+  </header>
+
+  <section id="view-home" class="view active">
+    <div id="riskAlert" class="alert hidden"></div>
+    <div class="cards" id="homeCards"></div>
+    <div class="grid2">
+      <div class="panel"><div class="panel-head"><span class="panel-title">Изменение баланса</span><span class="muted" id="balanceRange">Все сделки</span></div><canvas id="balanceChart"></canvas></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">Быстрые действия</span></div><div class="quick">
+        <button class="btn primary" onclick="openTradeModal()">＋ Сделка</button>
+        <button class="btn" onclick="showView('calendar')">📅 Календарь</button>
+        <button class="btn" onclick="showView('stats')">📈 Статистика</button>
+        <button class="btn" onclick="showView('goals')">🎯 Цели</button>
+      </div><div style="margin-top:18px"><div class="muted" style="font-size:12px">Сегодня</div><div id="todaySummary" style="font-size:28px;font-weight:900;margin-top:6px">0$</div></div></div>
+    </div>
+  </section>
+
+  <section id="view-calendar" class="view">
+    <div class="panel">
+      <div class="calendar-head"><button class="btn" onclick="changeMonth(-1)">‹</button><div style="font-weight:900" id="calendarTitle"></div><button class="btn" onclick="changeMonth(1)">›</button></div>
+      <div class="calendar" id="calendarGrid"></div>
+    </div>
+  </section>
+
+  <section id="view-trades" class="view">
+    <div class="panel">
+      <h2 class="section-title">История сделок</h2>
+      <div class="toolbar">
+        <input class="grow" id="searchTrade" placeholder="Поиск актива или стратегии…" oninput="renderTrades()">
+        <select id="periodFilter" onchange="renderTrades()"><option value="all">Все</option><option value="today">Сегодня</option><option value="week">Неделя</option><option value="month">Месяц</option></select>
+        <select id="resultFilter" onchange="renderTrades()"><option value="all">Результат: все</option><option value="win">Прибыльные</option><option value="loss">Убыточные</option></select>
+        <select id="assetFilter" onchange="renderTrades()"><option value="all">Все активы</option></select>
+      </div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Дата</th><th>Актив</th><th>Направление</th><th>PnL</th><th>%</th><th>Стратегия</th><th>Результат</th><th></th></tr></thead><tbody id="tradeTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="view-stats" class="view">
+    <div class="cards" id="statsCards"></div>
+    <div class="chart-grid" style="margin-top:14px">
+      <div class="panel chart-card"><div class="panel-head"><span class="panel-title">Прибыль по дням</span></div><canvas id="dailyChart"></canvas></div>
+      <div class="panel chart-card"><div class="panel-head"><span class="panel-title">Прибыль по месяцам</span></div><canvas id="monthlyChart"></canvas></div>
+      <div class="panel chart-card"><div class="panel-head"><span class="panel-title">PnL по стратегиям</span></div><canvas id="strategyChart"></canvas></div>
+      <div class="panel chart-card"><div class="panel-head"><span class="panel-title">Win Rate</span></div><canvas id="winChart"></canvas></div>
+    </div>
+  </section>
+
+  <section id="view-goals" class="view">
+    <div class="goal-grid" id="goalCards"></div>
+    <div class="panel" style="margin-top:14px"><h2 class="section-title">Настройки целей</h2><div class="form-grid">
+      <div class="field"><label>Начальный депозит</label><input id="goalStart" type="number" step="0.01"></div>
+      <div class="field"><label>Целевой баланс</label><input id="goalTarget" type="number" step="0.01"></div>
+      <div class="field"><label>Цель прибыли за день</label><input id="goalDay" type="number" step="0.01"></div>
+      <div class="field"><label>Цель прибыли за неделю</label><input id="goalWeek" type="number" step="0.01"></div>
+      <div class="field"><label>Цель прибыли за месяц</label><input id="goalMonth" type="number" step="0.01"></div>
+    </div><div class="form-actions"><button class="btn primary" onclick="saveGoals()">Сохранить цели</button></div></div>
+  </section>
+
+  <section id="view-settings" class="view">
+    <div class="settings-grid">
+      <div class="panel"><h2 class="section-title">Основные настройки</h2><div class="setting"><label>Валюта</label><select id="currency" onchange="saveSettings()"><option>USD</option><option>EUR</option><option>RUB</option></select></div><div class="setting" style="margin-top:12px"><label>Начальный баланс</label><input id="startBalance" type="number" step="0.01" onchange="saveSettings()"></div></div>
+      <div class="panel"><h2 class="section-title">Управление риском</h2><div class="setting"><label>Риск на сделку, %</label><input id="riskPct" type="number" step="0.1" onchange="saveSettings()"></div><div class="setting" style="margin-top:12px"><label>Максимальный дневной убыток</label><input id="maxDailyLoss" type="number" step="0.01" onchange="saveSettings()"></div><div class="setting" style="margin-top:12px"><label>Максимум сделок в день</label><input id="maxTradesDay" type="number" step="1" onchange="saveSettings()"></div></div>
+      <div class="panel"><h2 class="section-title">Данные</h2><div class="quick"><button class="btn" onclick="exportJSON()">Экспорт JSON</button><button class="btn" onclick="exportCSV()">Экспорт CSV</button><button class="btn" onclick="document.getElementById('importFile').click()">Импорт JSON</button><button class="btn danger" onclick="clearAll()">Очистить всё</button><input class="file-input" id="importFile" type="file" accept=".json,application/json" onchange="importJSON(event)"></div></div>
+      <div class="panel"><h2 class="section-title">О приложении</h2><p class="muted" style="font-size:13px;line-height:1.6">TradeLog хранит сделки локально в браузере. Сервер не требуется. Все показатели рассчитываются из сохранённых сделок.</p></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<button class="fab" onclick="openTradeModal()">＋</button>
+<nav class="mobile-nav">
+ <button data-view="home" class="active"><b>📊</b>Главная</button><button data-view="calendar"><b>📅</b>Календарь</button><button data-view="trades"><b>↕️</b>Сделки</button><button data-view="stats"><b>📈</b>Статистика</button><button data-view="settings"><b>⚙️</b>Настройки</button>
+</nav>
+<div id="toast" class="toast"></div>
+
+<div class="modal-backdrop" id="tradeModal">
+<div class="modal">
+ <div class="modal-head"><h2 id="tradeModalTitle">Новая сделка</h2><button class="close" onclick="closeModal('tradeModal')">×</button></div>
+ <form id="tradeForm" onsubmit="saveTrade(event)">
+ <input type="hidden" id="editId">
+ <div class="form-grid">
+  <div class="field"><label>Дата</label><input id="fDate" type="date" required></div><div class="field"><label>Время</label><input id="fTime" type="time"></div>
+  <div class="field"><label>Актив / валютная пара</label><input id="fAsset" placeholder="BTC/USDT" required></div>
+  <div class="field"><label>Направление</label><select id="fDirection"><option>BUY</option><option>SELL</option></select></div>
+  <div class="field"><label>Тип сделки</label><select id="fType"><option>Spot</option><option>Futures</option><option>Options</option><option>Другое</option></select></div>
+  <div class="field"><label>Таймфрейм</label><select id="fTf"><option>1m</option><option>3m</option><option>5m</option><option>15m</option><option>30m</option><option>1H</option><option>4H</option><option>1D</option><option>Другое</option></select></div>
+  <div class="field"><label>Размер позиции</label><input id="fSize" type="number" step="any" placeholder="100"></div><div class="field"><label>Цена входа</label><input id="fEntry" type="number" step="any"></div>
+  <div class="field"><label>Цена выхода</label><input id="fExit" type="number" step="any"></div><div class="field"><label>Стоп-лосс</label><input id="fSl" type="number" step="any"></div>
+  <div class="field"><label>Тейк-профит</label><input id="fTp" type="number" step="any"></div><div class="field"><label>PnL, $ (авто или вручную)</label><input id="fPnl" type="number" step="0.01" required></div>
+  <div class="field"><label>PnL, %</label><input id="fPnlPct" type="number" step="0.01"></div><div class="field"><label>Комиссия</label><input id="fFee" type="number" step="0.01" value="0"></div>
+  <div class="field"><label>Стратегия</label><input id="fStrategy" placeholder="Bollinger + RSI"></div><div class="field"><label>Эмоциональное состояние</label><select id="fEmotion"><option>Спокоен</option><option>Уверен</option><option>Нервничаю</option><option>FOMO</option><option>Жадность</option><option>Страх</option><option>Другое</option></select></div>
+  <div class="field full"><label>Причина входа</label><textarea id="fReason" placeholder="Почему открыл сделку?"></textarea></div>
+  <div class="field full"><label>Комментарий</label><textarea id="fComment"></textarea></div>
+  <div class="field full"><label>Ссылка на скриншот графика (необязательно)</label><input id="fScreenshot" type="url" placeholder="https://..."></div>
+ </div>
+ <div class="form-actions"><button type="button" class="btn" onclick="closeModal('tradeModal')">Отмена</button><button class="btn primary" type="submit">Сохранить сделку</button></div>
+ </form>
+</div></div>
+
+<div class="modal-backdrop" id="dayModal"><div class="modal"><div class="modal-head"><h2 id="dayTitle">День</h2><button class="close" onclick="closeModal('dayModal')">×</button></div><div id="dayContent"></div></div></div>
+
+<script>
+'use strict';
+
+const KEY='tradelog_v1';
+const defaultState={
+  trades:[], settings:{currency:'USD',startBalance:1000,riskPct:1,maxDailyLoss:0,maxTradesDay:0},
+  goals:{start:1000,target:0,day:0,week:0,month:0}
+};
+let state=loadState(), currentView='home', calendarDate=new Date();
+
+function loadState(){
+  try{const x=JSON.parse(localStorage.getItem(KEY));return x?{...defaultState,...x,settings:{...defaultState.settings,...x.settings},goals:{...defaultState.goals,...x.goals}}:structuredClone(defaultState)}
+  catch(e){return structuredClone(defaultState)}
+}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function todayStr(){const d=new Date();return localDate(d)}
+function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function money(v,sign=true){const n=Number(v)||0;const s=n>0&&sign?'+':'';return s+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+({USD:'$',EUR:'€',RUB:'₽'}[state.settings.currency]||'$')}
+function cls(v){return v>0?'positive':v<0?'negative':'neutral'}
+function fmtDate(s){if(!s)return '';const [y,m,d]=s.split('-');return `${d}.${m}.${y}`}
+function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function startOfWeek(d){const x=new Date(d);const day=x.getDay()||7;x.setDate(x.getDate()-day+1);x.setHours(0,0,0,0);return x}
+function sum(arr){return arr.reduce((a,t)=>a+(Number(t.pnl)||0),0)}
+function tradesInRange(from,to){return state.trades.filter(t=>{const d=parseDate(t.date);return d>=from&&d<=to})}
+function rangeStats(from,to){const ts=tradesInRange(from,to);const wins=ts.filter(t=>t.pnl>0),loss=ts.filter(t=>t.pnl<0);return {ts,wins,loss,pnl:sum(ts)}}
+function allStats(){
+ const ts=state.trades,w=ts.filter(t=>t.pnl>0),l=ts.filter(t=>t.pnl<0);
+ return {ts,w,l,pnl:sum(ts),winRate:ts.length?w.length/ts.length*100:0,avgWin:w.length?sum(w)/w.length:0,avgLoss:l.length?sum(l)/l.length:0,pf:sum(l)?sum(w)/Math.abs(sum(l)):0,avg:ts.length?sum(ts)/ts.length:0}
+}
+function dayMap(){const m={};state.trades.forEach(t=>m[t.date]=(m[t.date]||0)+(Number(t.pnl)||0));return m}
+function dayTrades(){const m={};state.trades.forEach(t=>(m[t.date]??=[]).push(t));return m}
+function balanceAt(date){return Number(state.settings.startBalance||0)+state.trades.filter(t=>t.date<=date).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).reduce((a,t)=>a+Number(t.pnl||0),0)}
+function saveAndRender(msg){saveState();renderAll();if(msg)toast(msg)}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>el.classList.remove('show'),2200)}
+
+function showView(v){
+ currentView=v;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
+ document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+ const titles={home:['Главная','Ваш торговый журнал'],calendar:['Календарь','Результат торговли по дням'],trades:['Сделки','История и управление позициями'],stats:['Статистика','Аналитика торговых результатов'],goals:['Цели','Контроль прогресса'],settings:['Настройки','Параметры и данные']};
+ document.getElementById('pageTitle').textContent=titles[v][0];document.getElementById('pageSubtitle').textContent=titles[v][1];
+ if(v==='calendar')renderCalendar(); if(v==='trades')renderTrades(); if(v==='stats')renderStats();if(v==='goals')renderGoals();if(v==='settings')renderSettings();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+
+function openTradeModal(id=null){
+ document.getElementById('tradeModalTitle').textContent=id?'Редактировать сделку':'Новая сделка';
+ document.getElementById('tradeForm').reset();document.getElementById('editId').value=id||'';
+ document.getElementById('fDate').value=todayStr();document.getElementById('fTime').value=new Date().toTimeString().slice(0,5);document.getElementById('fFee').value='0';
+ if(id){const t=state.trades.find(x=>x.id===id);if(!t)return;Object.entries({fDate:t.date,fTime:t.time,fAsset:t.asset,fDirection:t.direction,fType:t.type,fTf:t.tf,fSize:t.size,fEntry:t.entry,fExit:t.exit,fSl:t.sl,fTp:t.tp,fPnl:t.pnl,fPnlPct:t.pnlPct,fFee:t.fee,fStrategy:t.strategy,fEmotion:t.emotion,fReason:t.reason,fComment:t.comment,fScreenshot:t.screenshot}).forEach(([k,v])=>document.getElementById(k).value=v??'')}
+ document.getElementById('tradeModal').classList.add('open');setTimeout(()=>document.getElementById('fAsset').focus(),50);
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(x=>x.addEventListener('click',e=>{if(e.target===x)x.classList.remove('open')}));
+
+function calcAutoPnl(){
+ const size=Number(fSize.value),entry=Number(fEntry.value),exit=Number(fExit.value);
+ if(size&&entry&&exit){let p=(fDirection.value==='BUY'?(exit-entry):(entry-exit))*size;fPnl.value=p.toFixed(2);fPnlPct.value=(p/Math.abs(size)*100).toFixed(2)}
+}
+['fSize','fEntry','fExit','fDirection'].forEach(id=>document.getElementById(id).addEventListener('input',calcAutoPnl));
+function saveTrade(e){
+ e.preventDefault();
+ const pnl=Number(fPnl.value)||0, fee=Number(fFee.value)||0;
+ const id=document.getElementById('editId').value;
+ const obj={id:id||uid(),date:fDate.value,time:fTime.value,asset:fAsset.value.trim().toUpperCase(),direction:fDirection.value,type:fType.value,tf:fTf.value,size:Number(fSize.value)||0,entry:Number(fEntry.value)||0,exit:Number(fExit.value)||0,sl:Number(fSl.value)||0,tp:Number(fTp.value)||0,pnl:pnl-fee,pnlGross:pnl,pnlPct:Number(fPnlPct.value)||0,fee,strategy:fStrategy.value.trim()||'Без стратегии',emotion:fEmotion.value,reason:fReason.value,comment:fComment.value,screenshot:fScreenshot.value};
+ if(id){const i=state.trades.findIndex(t=>t.id===id);if(i>=0)state.trades[i]=obj}else state.trades.push(obj);
+ saveAndRender(id?'Сделка обновлена':'Сделка добавлена');closeModal('tradeModal');showView(currentView);
+}
+function deleteTrade(id){
+ if(!confirm('Удалить эту сделку?'))return;
+ state.trades=state.trades.filter(t=>t.id!==id);saveAndRender('Сделка удалена');
+}
+function renderHome(){
+ const now=new Date(), week=startOfWeek(now), month=new Date(now.getFullYear(),now.getMonth(),1);
+ const day=rangeStats(new Date(now.getFullYear(),now.getMonth(),now.getDate()),new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59));
+ const wk=rangeStats(week,new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59));
+ const mo=rangeStats(month,new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)), a=allStats();
+ const dayMapv=dayMap(), vals=Object.values(dayMapv);
+ const max=vals.length?Math.max(...vals):0,min=vals.length?Math.min(...vals):0;
+ const balance=Number(state.settings.startBalance||0)+a.pnl;
+ const cards=[['Текущий баланс',money(balance),cls(balance)],['Прибыль сегодня',money(day.pnl),cls(day.pnl)],['Прибыль за неделю',money(wk.pnl),cls(wk.pnl)],['Прибыль за месяц',money(mo.pnl),cls(mo.pnl)],['Общая прибыль',money(a.pnl),cls(a.pnl)],['Количество сделок',a.ts.length,'neutral'],['Прибыльных сделок',a.w.length,'positive'],['Убыточных сделок',a.l.length,'negative'],['Win Rate',a.winRate.toFixed(1)+'%','neutral'],['Средняя прибыль',money(a.avgWin),'positive'],['Средний убыток',money(a.avgLoss),'negative'],['Макс. прибыль за день',money(max),'positive'],['Макс. убыток за день',money(min),'negative']];
+ document.getElementById('homeCards').innerHTML=cards.map(c=>`<div class="card"><div class="stat-label">${c[0]}</div><div class="stat-value ${c[2]}">${c[1]}</div></div>`).join('');
+ document.getElementById('todaySummary').textContent=money(day.pnl);document.getElementById('todaySummary').className=cls(day.pnl);
+ document.getElementById('sideRisk').innerHTML=`Риск: ${state.settings.riskPct||0}%<br>Дневной лимит: ${state.settings.maxDailyLoss>0?money(state.settings.maxDailyLoss,false):'не задан'}`;
+ const lossLimit=Number(state.settings.maxDailyLoss)||0;if(lossLimit>0&&day.pnl<=-lossLimit){const al=document.getElementById('riskAlert');al.classList.remove('hidden');al.textContent='⚠ Достигнут установленный лимит дневного убытка.'}else document.getElementById('riskAlert').classList.add('hidden');
+ drawBalanceChart();
+}
+function drawCanvas(id){const c=document.getElementById(id),r=c.getBoundingClientRect(),dpr=devicePixelRatio||1;c.width=r.width*dpr;c.height=r.height*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);return [x,r.width,r.height]}
+function lineChart(id,labels,values,opts={}){
+ const [ctx,w,h]=drawCanvas(id);ctx.clearRect(0,0,w,h);if(!values.length)return;
+ const pad={l:42,r:14,t:18,b:30},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,min=Math.min(0,...values),max=Math.max(0,...values),range=max-min||1;
+ ctx.strokeStyle='#222a36';ctx.lineWidth=1;ctx.font='10px system-ui';ctx.fillStyle='#697587';
+ for(let i=0;i<5;i++){let y=pad.t+ch*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();let val=max-(range*i/4);ctx.fillText(val.toFixed(0),4,y+3)}
+ const pts=values.map((v,i)=>[pad.l+(values.length===1?cw/2:cw*i/(values.length-1)),pad.t+(max-v)/range*ch]);
+ ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.strokeStyle=opts.color||'#25d695';ctx.lineWidth=2.5;ctx.stroke();
+ pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fillStyle=opts.color||'#25d695';ctx.fill();if(labels[i]&&values.length<18){ctx.fillStyle='#697587';ctx.textAlign='center';ctx.fillText(labels[i],p[0],h-8)}});
+}
+function barChart(id,labels,values){
+ const [ctx,w,h]=drawCanvas(id);ctx.clearRect(0,0,w,h);if(!values.length)return;const pad={l:34,r:10,t:15,b:35},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,min=Math.min(0,...values),max=Math.max(0,...values),range=max-min||1,zero=pad.t+(max)/range*ch;
+ ctx.strokeStyle='#222a36';ctx.beginPath();ctx.moveTo(pad.l,zero);ctx.lineTo(w-pad.r,zero);ctx.stroke();const bw=Math.max(5,(cw/values.length)*.62);
+ values.forEach((v,i)=>{const x=pad.l+(i+.5)*cw/values.length;const y=pad.t+(max-v)/range*ch;const top=Math.min(y,zero),hh=Math.abs(zero-y);ctx.fillStyle=v>=0?'#25d695':'#ff5d6c';ctx.fillRect(x-bw/2,top,bw,Math.max(2,hh));if(labels[i]&&values.length<=15){ctx.fillStyle='#697587';ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText(labels[i],x,h-8)}})
+}
+function drawBalanceChart(){
+ const ts=[...state.trades].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)), vals=[Number(state.settings.startBalance||0)];ts.forEach(t=>vals.push(vals.at(-1)+Number(t.pnl||0)));lineChart('balanceChart',ts.map(t=>fmtDate(t.date).slice(0,5)),vals,{color:'#5b8cff'})
+}
+function changeMonth(n){calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()+n,1);renderCalendar()}
+function renderCalendar(){
+ const y=calendarDate.getFullYear(),m=calendarDate.getMonth(),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];document.getElementById('calendarTitle').textContent=new Date(y,m,1).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+ const first=(new Date(y,m,1).getDay()+6)%7,last=new Date(y,m+1,0).getDate(),dm=dayMap(),dt=dayTrades();let h=names.map(n=>`<div class="weekday">${n}</div>`).join('');
+ for(let i=0;i<first;i++)h+='<div></div>';
+ for(let d=1;d<=last;d++){const key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,p=dm[key]||0,c=(dt[key]||[]).length;h+=`<button class="day ${p>0?'positive-day':p<0?'negative-day':'zero-day'}" onclick="openDay('${key}')" style="text-align:left;color:var(--text)"><div class="daynum">${d}</div><div class="day-pnl ${cls(p)}">${p?money(p):'0 '+({USD:'$',EUR:'€',RUB:'₽'}[state.settings.currency]||'$')}</div><div class="day-count">${c?c+' сделок':'без сделок'}</div></button>`}
+ document.getElementById('calendarGrid').innerHTML=h;
+}
+function openDay(date){
+ const ts=state.trades.filter(t=>t.date===date),p=sum(ts),w=ts.filter(t=>t.pnl>0).length,l=ts.filter(t=>t.pnl<0).length;
+ document.getElementById('dayTitle').textContent=parseDate(date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+ document.getElementById('dayContent').innerHTML=`<div class="detail"><div class="detail-box"><span class="muted">Результат</span><b class="${cls(p)}">${money(p)}</b></div><div class="detail-box"><span class="muted">Сделок</span><b>${ts.length}</b></div><div class="detail-box"><span class="muted">Win</span><b class="positive">${w}</b></div><div class="detail-box"><span class="muted">Win Rate</span><b>${ts.length?(w/ts.length*100).toFixed(1):0}%</b></div></div><div class="trade-list">${ts.length?ts.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map((t,i)=>`<div class="trade-row"><div><b>Сделка №${i+1} · ${t.asset}</b><small>${t.time||''} · ${t.direction} · ${t.strategy}</small></div><strong class="${cls(t.pnl)}">${money(t.pnl)}</strong></div>`).join(''):'<div class="empty">Сделок за этот день нет.</div>'}</div>`;
+ document.getElementById('dayModal').classList.add('open');
+}
+function renderTrades(){
+ const q=(document.getElementById('searchTrade')?.value||'').toLowerCase(),pf=document.getElementById('periodFilter')?.value||'all',rf=document.getElementById('resultFilter')?.value||'all',af=document.getElementById('assetFilter')?.value||'all';
+ const now=new Date(),week=startOfWeek(now),month=new Date(now.getFullYear(),now.getMonth(),1);
+ let ts=[...state.trades].sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+ if(pf==='today')ts=ts.filter(t=>t.date===todayStr());if(pf==='week')ts=ts.filter(t=>parseDate(t.date)>=week);if(pf==='month')ts=ts.filter(t=>parseDate(t.date)>=month);
+ if(rf==='win')ts=ts.filter(t=>t.pnl>0);if(rf==='loss')ts=ts.filter(t=>t.pnl<0);if(af!=='all')ts=ts.filter(t=>t.asset===af);
+ if(q)ts=ts.filter(t=>(t.asset+' '+t.strategy).toLowerCase().includes(q));
+ document.getElementById('tradeTable').innerHTML=ts.length?ts.map(t=>`<tr><td>${fmtDate(t.date)}<br><span class="muted">${t.time||''}</span></td><td><b>${t.asset}</b><br><span class="muted">${t.type}</span></td><td>${t.direction}</td><td class="${cls(t.pnl)}"><b>${money(t.pnl)}</b></td><td>${t.pnlPct.toFixed(2)}%</td><td>${t.strategy}</td><td class="${cls(t.pnl)}">${t.pnl>0?'Прибыль':t.pnl<0?'Убыток':'0'}</td><td><div class="actions"><button class="btn small" onclick="openTradeModal('${t.id}')">Изм.</button><button class="btn small danger" onclick="deleteTrade('${t.id}')">Удал.</button></div></td></tr>`).join(''):`<tr><td colspan="8"><div class="empty">Сделок пока нет. Добавьте первую сделку.</div></td></tr>`;
+ const assets=[...new Set(state.trades.map(t=>t.asset).filter(Boolean))].sort();document.getElementById('assetFilter').innerHTML='<option value="all">Все активы</option>'+assets.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+function renderStats(){
+ const a=allStats(),days=dayMap(),entries=Object.entries(days).sort(),best=entries.length?entries.reduce((x,y)=>y[1]>x[1]?y:x):null,worst=entries.length?entries.reduce((x,y)=>y[1]<x[1]?y:x):null,bestT=a.ts.length?a.ts.reduce((x,y)=>y.pnl>x.pnl?y:x):null,worstT=a.ts.length?a.ts.reduce((x,y)=>y.pnl<x.pnl?y:x):null;
+ let streakW=0,streakL=0,cw=0,cl=0;[...a.ts].sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time)).forEach(t=>{if(t.pnl>0){cw++;cl=0;streakW=Math.max(streakW,cw)}else if(t.pnl<0){cl++;cw=0;streakL=Math.max(streakL,cl)}});
+ const cards=[['Win Rate',a.winRate.toFixed(1)+'%','neutral'],['Profit Factor',a.pf? a.pf.toFixed(2):'—','neutral'],['Средний Win',money(a.avgWin),'positive'],['Средний Loss',money(a.avgLoss),'negative'],['Лучший день',best?money(best[1]):'—','positive'],['Худший день',worst?money(worst[1]):'—','negative'],['Лучший трейд',bestT?money(bestT.pnl):'—','positive'],['Худший трейд',worstT?money(worstT.pnl):'—','negative'],['Количество сделок',a.ts.length,'neutral'],['Общий PnL',money(a.pnl),cls(a.pnl)],['Средний PnL',money(a.avg),cls(a.avg)],['Серия Win / Loss',`${streakW} / ${streakL}`,'neutral']];
+ document.getElementById('statsCards').innerHTML=cards.map(c=>`<div class="card"><div class="stat-label">${c[0]}</div><div class="stat-value ${c[2]}">${c[1]}</div></div>`).join('');
+ const monthMap={};state.trades.forEach(t=>{const k=t.date.slice(0,7);monthMap[k]=(monthMap[k]||0)+t.pnl});const strat={};state.trades.forEach(t=>strat[t.strategy]=(strat[t.strategy]||0)+t.pnl);
+ barChart('dailyChart',entries.slice(-15).map(x=>x[0].slice(5)),entries.slice(-15).map(x=>x[1]));
+ barChart('monthlyChart',Object.entries(monthMap).sort().slice(-12).map(x=>x[0].slice(2)),Object.entries(monthMap).sort().slice(-12).map(x=>x[1]));
+ barChart('strategyChart',Object.entries(strat).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,10).map(x=>x[0].slice(0,10)),Object.entries(strat).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,10).map(x=>x[1]));
+ lineChart('winChart',['Win','Loss'],[a.w.length,a.l.length],{color:'#25d695'});
+}
+function renderGoals(){
+ const a=allStats(),now=new Date(),day=rangeStats(new Date(now.getFullYear(),now.getMonth(),now.getDate()),new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59)),week=rangeStats(startOfWeek(now),now),month=rangeStats(new Date(now.getFullYear(),now.getMonth(),1),now);
+ const start=Number(state.goals.start||state.settings.startBalance||0),target=Number(state.goals.target||0),balance=start+a.pnl;
+ const arr=[['Цель баланса',balance,target,target?Math.max(0,Math.min(100,(balance-start)/(target-start||1)*100)):0],['Цель дня',day.pnl,state.goals.day,Number(state.goals.day)?Math.max(0,Math.min(100,day.pnl/state.goals.day*100)):0],['Цель недели',week.pnl,state.goals.week,Number(state.goals.week)?Math.max(0,Math.min(100,week.pnl/state.goals.week*100)):0],['Цель месяца',month.pnl,state.goals.month,Number(state.goals.month)?Math.max(0,Math.min(100,month.pnl/state.goals.month*100)):0]];
+ document.getElementById('goalCards').innerHTML=arr.map(x=>`<div class="card"><h3>${x[0]}</h3><div class="goal-num ${cls(x[1])}">${money(x[1])}</div><div class="muted" style="font-size:11px;margin-top:5px">Цель: ${money(x[2])}</div><div class="progress"><i style="width:${x[3]}%"></i></div><div style="font-size:11px;margin-top:7px">${x[3].toFixed(1)}%</div></div>`).join('');
+ document.getElementById('goalStart').value=state.goals.start||state.settings.startBalance||0;document.getElementById('goalTarget').value=state.goals.target||0;document.getElementById('goalDay').value=state.goals.day||0;document.getElementById('goalWeek').value=state.goals.week||0;document.getElementById('goalMonth').value=state.goals.month||0;
+}
+function saveGoals(){state.goals={start:Number(goalStart.value)||0,target:Number(goalTarget.value)||0,day:Number(goalDay.value)||0,week:Number(goalWeek.value)||0,month:Number(goalMonth.value)||0};saveAndRender('Цели сохранены');renderGoals()}
+function renderSettings(){currency.value=state.settings.currency;startBalance.value=state.settings.startBalance;riskPct.value=state.settings.riskPct;maxDailyLoss.value=state.settings.maxDailyLoss;maxTradesDay.value=state.settings.maxTradesDay}
+function saveSettings(){state.settings.currency=currency.value;state.settings.startBalance=Number(startBalance.value)||0;state.settings.riskPct=Number(riskPct.value)||0;state.settings.maxDailyLoss=Number(maxDailyLoss.value)||0;state.settings.maxTradesDay=Number(maxTradesDay.value)||0;saveAndRender('Настройки сохранены')}
+function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+function exportCSV(){const heads=['id','date','time','asset','direction','type','tf','size','entry','exit','sl','tp','pnl','pnlPct','fee','strategy','emotion','reason','comment','screenshot'];const rows=[heads,...state.trades.map(t=>heads.map(h=>t[h]))].map(r=>r.map(csvEscape).join(',')).join('\n');download('trades.csv','\ufeff'+rows,'text/csv;charset=utf-8');toast('CSV экспортирован')}
+function exportJSON(){download('tradelog-backup.json',JSON.stringify(state,null,2),'application/json');toast('JSON экспортирован')}
+function download(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x||!Array.isArray(x.trades))throw Error();state={...defaultState,...x,settings:{...defaultState.settings,...x.settings},goals:{...defaultState.goals,...x.goals}};saveAndRender('Данные импортированы')}catch(_){toast('Не удалось импортировать JSON')}};r.readAsText(file);e.target.value=''}
+function clearAll(){if(!confirm('Удалить ВСЕ сделки и сбросить настройки? Это действие нельзя отменить.'))return;state=structuredClone(defaultState);saveAndRender('Все данные очищены');showView('home')}
+function renderAll(){renderHome();if(currentView==='calendar')renderCalendar();if(currentView==='trades')renderTrades();if(currentView==='stats')renderStats();if(currentView==='goals')renderGoals();if(currentView==='settings')renderSettings()}
+window.addEventListener('resize',()=>{if(currentView==='home')drawBalanceChart();if(currentView==='stats')renderStats()});
+renderAll();
+</script>
+</body>
+</html>
